@@ -26,7 +26,9 @@ class Processor
       when MIDIMessage::NoteOn
         active_middlewares.inject(event) { |event, mw| mw.note_on(event) }
       when MIDIMessage::NoteOff
+        p "NOTE OFF??"
         active_middlewares.inject(event) { |event, mw| mw.note_off(event) }
+        p "NOTES OFF"
       when MIDIMessage::ControlChange
         active_middlewares.inject(event) { |event, mw| mw.control_change(event, event[:message].index, event[:message].value) }
       end
