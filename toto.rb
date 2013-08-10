@@ -11,10 +11,11 @@ processor = Processor.new(synth)
 
 
 processor.add_middleware Debugging
-processor.add_middleware KnobNoise
+#processor.add_middleware KnobNoise
 #processor.add_middleware MirrorKeyboard
 #processor.add_middleware ReverseEcho
-processor.add_middleware Arpeggiator
+processor.add_middleware Bender
+#processor.add_middleware Arpeggiator
 processor.add_middleware Monitor
 
 processor.add_middleware KnobControl.new(
