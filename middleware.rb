@@ -1,13 +1,19 @@
 class Middleware
-  attr_reader :synth
+  attr_accessor :synth
 
-  def init(synth = nil, active = true)
-    @synth = synth
+  def initialize(*args)
     @active = true
+    self.class.enable
+    init(*args)
   end
 
-  def disable; @active = false; end
-  def enable; @active = true; end
+  def init(*args); end
+
+  def self.disable; @active = false; end
+  def self.enable; @active = true; end
+  def self.active?; @active; end
+
+  def active?; self.class.active?; end
 
   def any(event); event; end
   def note_on(event); event; end

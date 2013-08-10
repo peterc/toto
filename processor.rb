@@ -8,9 +8,14 @@ class Processor
   end
 
   def add_middleware(middleware)
-    mw = middleware.new
-    mw.init(synth)
+    mw = middleware.is_a?(Class) ? middleware.new : middleware
+    mw.synth = synth
+
     @middleware << mw 
+  end
+
+  def active_middlewares
+    @middleware.select { |mw| mw.active? }
   end
 
   def start
@@ -19,14 +24,14 @@ class Processor
     @listener.listen_for() do |event|
       case event[:message]
       when MIDIMessage::NoteOn
-        @middleware.inject(event) { |event, mw| mw.note_on(event) }
+        active_middlewares.inject(event) { |event, mw| mw.note_on(event) }
       when MIDIMessage::NoteOff
-        @middleware.inject(event) { |event, mw| mw.note_off(event) }
+        active_middlewares.inject(event) { |event, mw| mw.note_off(event) }
       when MIDIMessage::ControlChange
-        @middleware.inject(event) { |event, mw| mw.control_change(event, event[:message].index, event[:message].value) }
+        active_middlewares.inject(event) { |event, mw| mw.control_change(event, event[:message].index, event[:message].value) }
       end
       
-      @middleware.inject(event) { |event, mw| mw.any(event) }
+      active_middlewares.inject(event) { |event, mw| mw.any(event) }
     end
 
     @listener.run(:background => true)
