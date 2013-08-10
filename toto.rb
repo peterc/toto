@@ -1,6 +1,6 @@
 require 'unimidi'
 require 'midi-eye'
-require 'eventmachine' 
+require 'eventmachine'
 
 require_relative 'synth'
 require_relative 'processor'
@@ -11,7 +11,7 @@ processor = Processor.new(synth)
 
 
 processor.add_middleware Debugging
-#processor.add_middleware KnobNoise
+processor.add_middleware KnobNoise
 #processor.add_middleware MirrorKeyboard
 #processor.add_middleware ReverseEcho
 processor.add_middleware Arpeggiator
@@ -21,7 +21,8 @@ processor.add_middleware KnobControl.new(
   21 => Debugging,
   22 => KnobNoise,
   23 => MirrorKeyboard,
-  24 => Monitor
+  24 => Monitor,
+  25 => Arpeggiator
 )
 
 processor.start

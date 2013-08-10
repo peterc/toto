@@ -10,7 +10,7 @@ class Synth
     puts 144, note, velocity
     EM.add_timer(off) do
       puts 144, note, 0
-    end
+    end if velocity != 0 && off != 999
   end
 
   def play_note_in(note = 60, velocity = 127, time)

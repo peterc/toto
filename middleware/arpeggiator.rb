@@ -1,39 +1,52 @@
 class Arpeggiator < Middleware
   def init
-    @speed = 0.2
-    @arps = {}
-    @pattern = [0, 4, 7]
-    @pattern = [0, 7, 4]
+    @speed = 0.5
+    @live_notes = []
+    @pos = 0
   end
 
   def note_on(event)
-    original_note = event[:message].dup
-    synth.puts original_note
+    note = event[:message].dup
 
-    if original_note.velocity == 0
-      @arps[original_note.note][:timer].cancel
+    if note.velocity == 0
+      @live_notes.delete(note.note)
+      if @live_notes.empty?    
+        @arp.cancel
+        @arp = nil
+        @pos = 0
+      end
       return nil
     end
 
-    @arps[original_note.note] = { :note => original_note.note, :position => 1 }
+    @live_notes << note.note
+    @live_notes.uniq!
 
-    @arps[original_note.note][:timer] = EventMachine::PeriodicTimer.new(@speed) do
-      synth.play_note @arps[original_note.note][:note], 0
-      @arps[original_note.note][:note] = original_note.note + @pattern[@arps[original_note.note][:position]]
-      @arps[original_note.note][:position] += 1
-      @arps[original_note.note][:position] = @arps[original_note.note][:position] % @pattern.length
-      synth.play_note @arps[original_note.note][:note], original_note.velocity
-    end
+    @arp = EventMachine::PeriodicTimer.new(@speed) do
+      synth.play_note @current_note, 0 if @current_note
+      @current_note = @live_notes[@pos]
+      begin
+        @pos += 1
+        @pos %= @live_notes.length 
+        synth.play_note @current_note, note.velocity, @speed * 2 if @current_note
+      rescue
+        @pos = 0
+      end
+    end unless @arp
 
     nil
   end
 
   def note_off(event)
-    @arps[event[:message].note][:timer].cancel
+    @live_notes.delete(event[:message].note)
+    if @live_notes.empty?    
+      @arp.cancel 
+      @arp = nil
+      @pos = 0
+    end
   end
 
   def control_change(event, knob, value)
-    return unless knob == 28
+    return event unless knob == 28
 
     @speed = 0.1 + value / 256.0
 

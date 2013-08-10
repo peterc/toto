@@ -26,7 +26,7 @@ class ReverseEcho < Middleware
   end
 
   def control_change(event, knob, value)
-    return unless knob == 28
+    return event unless knob == 28
 
     @echo_speed = 0.1 + value / 256.0
 
