@@ -50,26 +50,125 @@ end
 
 class Processor
   attr_reader :synth
+  attr_accessor :middleware
 
   def initialize(synth)
     @synth = synth
+    @events = { :any => [], :note_on => [], :note_off => [], :control_change => [] }
+    @middleware = []
+  end
+
+  def add_middleware(middleware)
+    mw = middleware.new
+    mw.init(synth)
+    @middleware << mw 
+  end
+
+  def on(*events, &blk)
+    if events.empty?
+      @events[:any] ||= []
+      @events[:any] << blk
+    end
+
+    events.each do |name|
+      @events[name] ||= []
+      @events[name] << blk
+    end
   end
 
   def start
     @listener = MIDIEye::Listener.new(synth.input)
-    @listener.listen_for(:class => [MIDIMessage::NoteOn, MIDIMessage::NoteOff]) do |event|
-      p event[:message].verbose_name
-      event[:message].note = (event[:message].note - 60) * -1 + 60
-      synth.puts event[:message]
+
+    @listener.listen_for() do |event|
+      case event[:message]
+      when MIDIMessage::NoteOn
+        @events[:note_on].each { |b| b.call(event) }
+        @middleware.inject(event) { |event, mw| mw.note_on(event) }
+      when MIDIMessage::NoteOff
+        @events[:note_off].each { |b| b.call(event) }
+        @middleware.inject(event) { |event, mw| mw.note_off(event) }
+      when MIDIMessage::ControlChange
+        @events[:control_change].each { |b| b.call(event, event[:message].index, event[:message].value) }
+        @middleware.inject(event) { |event, mw| mw.control_change(event, event[:message].index, event[:message].value) }
+      end
+
+
+
+      @events[:any].each { |b| b.call(event) }
+      
+      @middleware.inject(event) { |event, mw| mw.any(event) }
     end
 
     @listener.run(:background => true)
   end
 end
 
-synth = Synth.new(MIDISources.input, MIDISources.output)
+class Middleware
+  attr_reader :synth
 
+  def init(synth = nil, active = true)
+    @synth = synth
+    @active = true
+  end
+
+  def disable; @active = false; end
+  def enable; @active = true; end
+
+  def any(event); event; end
+  def note_on(event); event; end
+  def note_off(event); event; end
+  def control_change(event, knob, value); event; end
+end
+
+class MirrorKeyboard < Middleware
+  def mirror(note)
+    (note - 60) * -1 + 60
+  end
+
+  def note_on(event)
+    event[:message].note = mirror(event[:message].note)
+    event
+  end
+
+  def note_off(event)
+    event[:message].note = mirror(event[:message].note)
+    event
+  end
+end
+
+class Monitor < Middleware
+  def note_on(event)
+    synth.puts event[:message]
+  end
+
+  def note_off(event)
+    synth.puts event[:message]
+  end
+end
+
+class Debugging < Middleware
+  def any(event)
+    p event
+    event
+  end
+end
+
+class KnobNoise < Middleware
+  def control_change(event, knob, value)
+    synth.play_note(60 + (knob / 10) * 2, 20 + value / 6,0.1)
+    event
+  end
+end
+
+
+synth = Synth.new(MIDISources.input, MIDISources.output)
 processor = Processor.new(synth)
+
+processor.add_middleware Debugging
+processor.add_middleware KnobNoise
+processor.add_middleware MirrorKeyboard
+processor.add_middleware Monitor
+
 processor.start
 
 EM.run do
