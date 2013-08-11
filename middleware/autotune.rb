@@ -1,8 +1,8 @@
 class Autotune < Middleware
   def init
-    #@pattern = [0, 2, 5, 7, 9]         # pentatonic
+    @pattern = [0, 2, 5, 7, 9]         # pentatonic
     #@pattern = [0, 2, 4, 6, 7, 9, 11]  # lydian
-    @pattern = [0, 2, 3, 5, 7, 8, 10]  # aeolian
+    #@pattern = [0, 2, 3, 5, 7, 8, 10]  # aeolian
 
     @good_notes = []
     @corrections = {}
