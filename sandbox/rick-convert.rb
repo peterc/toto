@@ -11,4 +11,4 @@ note_midi_map.each_pair do |note_name, midi_val|
   rick_notes.gsub! note_name, midi_val.to_s
 end
 
-puts rick_notes.split.inspect
+puts rick_notes.split.map(&:to_i).inspect
