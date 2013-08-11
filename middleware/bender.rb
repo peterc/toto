@@ -30,4 +30,16 @@ class Bender < Middleware
 
     event
   end
+
+  #def control_change(event, knob, value)
+  #  return event unless knob == 28
+#
+  #  @speed = 0.1 + value / 256.0
+#
+  #  if @timer
+  #    @timer.interval = @speed
+  #  end
+#
+  #  event
+  #end
 end

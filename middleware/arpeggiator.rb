@@ -1,6 +1,6 @@
 class Arpeggiator < Middleware
   def init
-    @speed = 0.5
+    @speed = 0.1
     @live_notes = []
     @pos = 0
   end
@@ -27,10 +27,13 @@ class Arpeggiator < Middleware
       begin
         @pos += 1
         @pos %= @live_notes.length 
-        synth.play_note @current_note, note.velocity, @speed * 2 if @current_note
+        synth.play_note @current_note, note.velocity, @speed * 4 if @current_note
       rescue
         @pos = 0
       end
+
+      wobble = 10.0
+      @arp.interval = @speed #+ ((rand / wobble) - (1 / (wobble * 2)))
     end unless @arp
 
     nil
@@ -49,6 +52,10 @@ class Arpeggiator < Middleware
     return event unless knob == 28
 
     @speed = 0.1 + value / 256.0
+
+    if @arp
+      @arp.interval = @speed
+    end
 
     event
   end
