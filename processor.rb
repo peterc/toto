@@ -22,6 +22,9 @@ class Processor
     @listener = MIDIEye::Listener.new(synth.input)
 
     @listener.listen_for() do |event|
+
+      active_middlewares.inject(event) { |event, mw| mw.any(event) }
+
       case event[:message]
       when MIDIMessage::NoteOn
         active_middlewares.inject(event) { |event, mw| mw.note_on(event) }
@@ -33,7 +36,6 @@ class Processor
         synth.puts event[:message]
       end
       
-      active_middlewares.inject(event) { |event, mw| mw.any(event) }
     end
 
     @listener.run(:background => true)
